@@ -79,7 +79,25 @@ void load(char *name, Img *pic)
 // Implemente AQUI o seu algoritmo
 void seamcarve(int targetWidth)
 {
+    int matrix = malloc( pic[0].width * pic[0].height * 3 * sizeof(int));
     // Aplica o algoritmo e gera a saida em target->img...
+    for (int i = 0; i < pic[0].height; i++) {
+        if (i == 0 || i == pic[0].height) {
+            for (int j = 0; j < pic[0].width; j++){
+                if (j == ) {
+
+                }
+            }
+        } else {
+
+        }
+    
+    }
+
+    for(int i = 0; i < pic[0].height; i++){
+
+    }
+
 
     RGB8(*ptr)
     [target->width] = (RGB8(*)[target->width])target->img;
