@@ -79,25 +79,45 @@ void load(char *name, Img *pic)
 // Implemente AQUI o seu algoritmo
 void seamcarve(int targetWidth)
 {
-    int matrix = malloc( pic[0].width * pic[0].height * 3 * sizeof(int));
-    // Aplica o algoritmo e gera a saida em target->img...
-    for (int i = 0; i < pic[0].height; i++) {
-        if (i == 0 || i == pic[0].height) {
-            for (int j = 0; j < pic[0].width; j++){
-                if (j == ) {
+    int *matrix = malloc( width * height * 2 * sizeof(int));
+    int posicaoVertical = 0;
+    int posicaoHorizontal = 0;
+    int rx, gx, bx;
+    int ry, gy, by;
+    int gradX, gradY, grad;
+    for (int i = 0; i < width * height; i++) {
+        //mapear posição do pixel
+        posicaoVertical = i / width;
+        posicaoHorizontal = i - posicaoVertical*width;
 
-                }
-            }
+        if (posicaoHorizontal == 0 || posicaoHorizontal == width){
+
         } else {
-
+            //Energia em X
+            rx = pic[0].img[i+1].r - pic[0].img[i-1].r;
+            gx = pic[0].img[i+1].g - pic[0].img[i-1].g;
+            bx = pic[0].img[i+1].b - pic[0].img[i-1].b;
         }
+
+        if (posicaoVertical == 0 || posicaoVertical == height){
+
+        } else {
+            ry = pic[0].img[i+width].r - pic[0].img[i-width].r;
+            gy = pic[0].img[i+width].g - pic[0].img[i-width].g;
+            by = pic[0].img[i+width].b - pic[0].img[i-width].b;
+        }
+        
+        //Gradiente em X
+        gradX = rx*rx + gx*gx + bx*bx;
+
+        //Gradiente em Y
+        gradY = ry*ry + gy*gy + by*by;
+
+        //Gradiente
+        grad = gradX + gradY;
+    }
     
-    }
-
-    for(int i = 0; i < pic[0].height; i++){
-
-    }
-
+    // Aplica o algoritmo e gera a saida em target->img...
 
     RGB8(*ptr)
     [target->width] = (RGB8(*)[target->width])target->img;
@@ -137,7 +157,7 @@ int main(int argc, char **argv)
         exit(1);
     }
     glutInit(&argc, argv);
-
+printf("Origem é a imagem original, mascara é a máscara desejada\n");
     // Define do modo de operacao da GLUT
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 
