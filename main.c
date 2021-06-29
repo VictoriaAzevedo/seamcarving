@@ -79,32 +79,58 @@ void load(char *name, Img *pic)
 // Implemente AQUI o seu algoritmo
 void seamcarve(int targetWidth)
 {
-    int *matrix = malloc( width * height * 2 * sizeof(int));
+    int *matrix = malloc( width * height * sizeof(int));
     int posicaoVertical = 0;
     int posicaoHorizontal = 0;
     int rx, gx, bx;
     int ry, gy, by;
     int gradX, gradY, grad;
     for (int i = 0; i < width * height; i++) {
-        //mapear posição do pixel
-        posicaoVertical = i / width;
-        posicaoHorizontal = i - posicaoVertical*width;
+        //Energia em x
+        if (i == 0) {
+            //int resq = pic[0].img[i + 1].r;
+            //int rdir = pic[0].img[i + width - 1].r;
+            rx = pic[0].img[1].r - pic[0].img[width - 1].r;
+            gx = pic[0].img[1].g - pic[0].img[width - 1].g;
+            bx = pic[0].img[1].b - pic[0].img[width - 1].b;
 
-        if (posicaoHorizontal == 0 || posicaoHorizontal == width){
+        } else if (!(i % width)) { //pixels à esquerda
+            //posicaoHorizontal = i / width;
+            rx = pic[0].img[i + 1].r - pic[0].img[i + width - 1].r;
+            gx = pic[0].img[i + 1].g - pic[0].img[i + width - 1].g;
+            bx = pic[0].img[i + 1].b - pic[0].img[i + width - 1].b;
 
-        } else {
-            //Energia em X
+        } else if ( !((i+1) % width)) { //pixels à direita
+            rx = pic[0].img[i - width + 1].r - pic[0].img[i + 1].r;
+            gx = pic[0].img[i - width + 1].g - pic[0].img[i + 1].g;
+            bx = pic[0].img[i - width + 1].b - pic[0].img[i + 1].b;
+
+        } else { //pixels no centro
             rx = pic[0].img[i+1].r - pic[0].img[i-1].r;
             gx = pic[0].img[i+1].g - pic[0].img[i-1].g;
             bx = pic[0].img[i+1].b - pic[0].img[i-1].b;
         }
 
-        if (posicaoVertical == 0 || posicaoVertical == height){
+        //Energia em Y
+        /*if (i == 0) {
+            ry = pic[0].img[height*width - width + 1].r - pic[0].img[width].r;
+            gy = pic[0].img[height*width - width + 1].g - pic[0].img[width].g;
+            by = pic[0].img[height*width - width + 1].b - pic[0].img[width].b;*/
 
-        } else {
-            ry = pic[0].img[i+width].r - pic[0].img[i-width].r;
-            gy = pic[0].img[i+width].g - pic[0].img[i-width].g;
-            by = pic[0].img[i+width].b - pic[0].img[i-width].b;
+        if (i < width) { //pixels no topo
+            ry = pic[0].img[i + width*(height - 1)].r - pic[0].img[i + width].r;
+            gy = pic[0].img[i + width*(height - 1)].g - pic[0].img[i + width].g;
+            by = pic[0].img[i + width*(height - 1)].b - pic[0].img[i + width].b;
+
+        } else if ( i >= (width*(height -1))) { //pixels na base
+            ry = pic[0].img[i - width].r - pic[0].img[i - width*(height + 1)].r;
+            gy = pic[0].img[i - width].g - pic[0].img[i - width*(height + 1)].g;
+            by = pic[0].img[i - width].b - pic[0].img[i - width*(height + 1)].b;
+
+        } else { //pixels no centro
+            ry = pic[0].img[i - width].r - pic[0].img[i + width].r;
+            gy = pic[0].img[i - width].g - pic[0].img[i + width].g;
+            by = pic[0].img[i - width].b - pic[0].img[i + width].b;
         }
         
         //Gradiente em X
@@ -115,7 +141,9 @@ void seamcarve(int targetWidth)
 
         //Gradiente
         grad = gradX + gradY;
+        matrix[i] = grad;
     }
+    printf("%d\n", matrix[0]);
     
     // Aplica o algoritmo e gera a saida em target->img...
 
@@ -131,6 +159,7 @@ void seamcarve(int targetWidth)
     }
     // Chame uploadTexture a cada vez que mudar
     // a imagem (pic[2])
+    free(matrix);
     uploadTexture();
     glutPostRedisplay();
 }
