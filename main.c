@@ -119,14 +119,14 @@ void seamcarve(int targetWidth)
                 ry = sourcePtr[height - 1][j].r - sourcePtr[i+1][j].r;
                 gy = sourcePtr[height - 1][j].g - sourcePtr[i+1][j].g;
                 by = sourcePtr[height - 1][j].b - sourcePtr[i+1][j].b;
-            } else if (j == height - 1) { //pixels na base
-                ry = sourcePtr[i][0].r - sourcePtr[i][j - 1].r;
-                gy = sourcePtr[i][0].g - sourcePtr[i][j - 1].g;
-                by = sourcePtr[i][0].b - sourcePtr[i][j - 1].b;
+            } else if (i == height - 1) { //pixels na base
+                ry = sourcePtr[i - 1][j].r - sourcePtr[0][j].r;
+                gy = sourcePtr[i - 1][j].g - sourcePtr[0][j].g;
+                by = sourcePtr[i - 1][j].b - sourcePtr[0][j].b;
             } else { //pixels no centro
-                ry = sourcePtr[i][j+1].r - sourcePtr[i][j - 1].r;
-                gy = sourcePtr[i][j+1].g - sourcePtr[i][j - 1].g;
-                by = sourcePtr[i][j+1].b - sourcePtr[i][j - 1].b;
+                ry = sourcePtr[i + 1][j].r - sourcePtr[i - 1][j].r;
+                gy = sourcePtr[i + 1][j].g - sourcePtr[i - 1][j].g;
+                by = sourcePtr[i + 1][j].b - sourcePtr[i - 1][j].b;
             }
         
         //Gradiente em X
@@ -140,9 +140,8 @@ void seamcarve(int targetWidth)
         matrizPesosPtr[i][j] = grad;
         }
     }
-    
+
     //Cálculo da Matriz de Custo acumulado
-    int (*matrixPtr)[source->width] = (int(*)[source->width]) matriz;
     int primeiroPixel;
     int segundoPixel;
     int terceiroPixel;
@@ -150,26 +149,34 @@ void seamcarve(int targetWidth)
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             if (j == 0) { //Canto esquerdo
-                primeiroPixel = matrixPtr[i][j];
-                segundoPixel = matrixPtr[i][j+1];
+                primeiroPixel = matrizPesosPtr[i][j];
+                segundoPixel = matrizPesosPtr[i][j+1];
                 max = MAX2(primeiroPixel , segundoPixel);
-                matrixPtr[i+1][j] = matrixPtr[i+1][j] + max;
+                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j] + max;
 
             } else if (j == width - 1) { //Canto direito
-                primeiroPixel = matrixPtr[i][j];
-                segundoPixel = matrixPtr[i][j-1];
+                primeiroPixel = matrizPesosPtr[i][j];
+                segundoPixel = matrizPesosPtr[i][j-1];
                 max = MAX2(primeiroPixel, segundoPixel);
-                matrixPtr[i+1][j] = matrixPtr[i+1][j] + max;
+                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j] + max;
 
             } else { //Centro da imagem
-                primeiroPixel = matrixPtr[i][j-1];
-                segundoPixel = matrixPtr[i][j];
-                terceiroPixel = matrixPtr[i][j+1];
+                primeiroPixel = matrizPesosPtr[i][j-1];
+                segundoPixel = matrizPesosPtr[i][j];
+                terceiroPixel = matrizPesosPtr[i][j+1];
                 max = MAX3(primeiroPixel, segundoPixel, terceiroPixel);
-                matrixPtr[i+1][j] = matrixPtr[i+1][j];
+                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j];
             }
         }
-    }    
+    }
+
+    //Identificar o melhor caminho para o seamcarving
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            
+        }
+    }
+
     // Aplica o algoritmo e gera a saida em target->img...
 
     RGB8(*ptr)[target->width] = (RGB8(*)[target->width])target->img;
