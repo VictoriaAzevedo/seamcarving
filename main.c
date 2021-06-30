@@ -19,6 +19,8 @@
 // SOIL é a biblioteca para leitura das imagens
 #include <SOIL.h>
 
+#define MAX2(x,y) ((x>y)?x:y)
+#define MAX3(x,y,z) (MAX2(MAX2(x,y),z))
 // Um pixel RGB (24 bits)
 typedef struct
 {
@@ -79,59 +81,53 @@ void load(char *name, Img *pic)
 // Implemente AQUI o seu algoritmo
 void seamcarve(int targetWidth)
 {
-    int *matrix = malloc( width * height * sizeof(int));
-    int posicaoVertical = 0;
-    int posicaoHorizontal = 0;
+    //RGB8 (*ptr)[source->width] = (RGB8(*)[source->width]) source->img;
+    
+    RGB8* pixelDireita;
+    RGB8* pixelEsquerda;
+
+
+    int *matriz = malloc( width * height * sizeof(int));
     int rx, gx, bx;
     int ry, gy, by;
     int gradX, gradY, grad;
-    for (int i = 0; i < width * height; i++) {
-        //Energia em x
-        if (i == 0) {
-            //int resq = pic[0].img[i + 1].r;
-            //int rdir = pic[0].img[i + width - 1].r;
-            rx = pic[0].img[1].r - pic[0].img[width - 1].r;
-            gx = pic[0].img[1].g - pic[0].img[width - 1].g;
-            bx = pic[0].img[1].b - pic[0].img[width - 1].b;
 
-        } else if (!(i % width)) { //pixels à esquerda
-            //posicaoHorizontal = i / width;
-            rx = pic[0].img[i + 1].r - pic[0].img[i + width - 1].r;
-            gx = pic[0].img[i + 1].g - pic[0].img[i + width - 1].g;
-            bx = pic[0].img[i + 1].b - pic[0].img[i + width - 1].b;
+    RGB8(*sourcePtr)[source->width] = (RGB8(*)[source->width])source->img;
+    int (*matrizPesosPtr)[source->width] = (int(*)[source->width]) matriz;
 
-        } else if ( !((i+1) % width)) { //pixels à direita
-            rx = pic[0].img[i - width + 1].r - pic[0].img[i + 1].r;
-            gx = pic[0].img[i - width + 1].g - pic[0].img[i + 1].g;
-            bx = pic[0].img[i - width + 1].b - pic[0].img[i + 1].b;
+    for (int i = 0; i < source->height; i++){
+        for (int j = 0; j < source->width; j++){
+            
+            //Energia em X
+            if (j == 0) {// pixels a esquerda
+                rx = sourcePtr[i][j+1].r - sourcePtr[i][width - 1].r;
+                gx = sourcePtr[i][j+1].g - sourcePtr[i][width - 1].g;
+                bx = sourcePtr[i][j+1].b - sourcePtr[i][width - 1].b;
+            } else if (j == width - 1) { //pixels a direita
+                rx = sourcePtr[i][0].r - sourcePtr[i][j - 1].r;
+                gx = sourcePtr[i][0].g - sourcePtr[i][j - 1].g;
+                bx = sourcePtr[i][0].b - sourcePtr[i][j - 1].b;
+            } else { //pixels no centro
+                rx = sourcePtr[i][j+1].r - sourcePtr[i][j - 1].r;
+                gx = sourcePtr[i][j+1].g - sourcePtr[i][j - 1].g;
+                bx = sourcePtr[i][j+1].b - sourcePtr[i][j - 1].b;
+            }
 
-        } else { //pixels no centro
-            rx = pic[0].img[i+1].r - pic[0].img[i-1].r;
-            gx = pic[0].img[i+1].g - pic[0].img[i-1].g;
-            bx = pic[0].img[i+1].b - pic[0].img[i-1].b;
-        }
 
-        //Energia em Y
-        /*if (i == 0) {
-            ry = pic[0].img[height*width - width + 1].r - pic[0].img[width].r;
-            gy = pic[0].img[height*width - width + 1].g - pic[0].img[width].g;
-            by = pic[0].img[height*width - width + 1].b - pic[0].img[width].b;*/
-
-        if (i < width) { //pixels no topo
-            ry = pic[0].img[i + width*(height - 1)].r - pic[0].img[i + width].r;
-            gy = pic[0].img[i + width*(height - 1)].g - pic[0].img[i + width].g;
-            by = pic[0].img[i + width*(height - 1)].b - pic[0].img[i + width].b;
-
-        } else if ( i >= (width*(height -1))) { //pixels na base
-            ry = pic[0].img[i - width].r - pic[0].img[i - width*(height + 1)].r;
-            gy = pic[0].img[i - width].g - pic[0].img[i - width*(height + 1)].g;
-            by = pic[0].img[i - width].b - pic[0].img[i - width*(height + 1)].b;
-
-        } else { //pixels no centro
-            ry = pic[0].img[i - width].r - pic[0].img[i + width].r;
-            gy = pic[0].img[i - width].g - pic[0].img[i + width].g;
-            by = pic[0].img[i - width].b - pic[0].img[i + width].b;
-        }
+            //Energia em Y
+            if (i == 0) {// pixels no topo
+                ry = sourcePtr[height - 1][j].r - sourcePtr[i+1][j].r;
+                gy = sourcePtr[height - 1][j].g - sourcePtr[i+1][j].g;
+                by = sourcePtr[height - 1][j].b - sourcePtr[i+1][j].b;
+            } else if (j == height - 1) { //pixels na base
+                ry = sourcePtr[i][0].r - sourcePtr[i][j - 1].r;
+                gy = sourcePtr[i][0].g - sourcePtr[i][j - 1].g;
+                by = sourcePtr[i][0].b - sourcePtr[i][j - 1].b;
+            } else { //pixels no centro
+                ry = sourcePtr[i][j+1].r - sourcePtr[i][j - 1].r;
+                gy = sourcePtr[i][j+1].g - sourcePtr[i][j - 1].g;
+                by = sourcePtr[i][j+1].b - sourcePtr[i][j - 1].b;
+            }
         
         //Gradiente em X
         gradX = rx*rx + gx*gx + bx*bx;
@@ -141,14 +137,42 @@ void seamcarve(int targetWidth)
 
         //Gradiente
         grad = gradX + gradY;
-        matrix[i] = grad;
+        matrizPesosPtr[i][j] = grad;
+        }
     }
-    printf("%d\n", matrix[0]);
     
+    //Cálculo da Matriz de Custo acumulado
+    int (*matrixPtr)[source->width] = (int(*)[source->width]) matriz;
+    int primeiroPixel;
+    int segundoPixel;
+    int terceiroPixel;
+    int max;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            if (j == 0) { //Canto esquerdo
+                primeiroPixel = matrixPtr[i][j];
+                segundoPixel = matrixPtr[i][j+1];
+                max = MAX2(primeiroPixel , segundoPixel);
+                matrixPtr[i+1][j] = matrixPtr[i+1][j] + max;
+
+            } else if (j == width - 1) { //Canto direito
+                primeiroPixel = matrixPtr[i][j];
+                segundoPixel = matrixPtr[i][j-1];
+                max = MAX2(primeiroPixel, segundoPixel);
+                matrixPtr[i+1][j] = matrixPtr[i+1][j] + max;
+
+            } else { //Centro da imagem
+                primeiroPixel = matrixPtr[i][j-1];
+                segundoPixel = matrixPtr[i][j];
+                terceiroPixel = matrixPtr[i][j+1];
+                max = MAX3(primeiroPixel, segundoPixel, terceiroPixel);
+                matrixPtr[i+1][j] = matrixPtr[i+1][j];
+            }
+        }
+    }    
     // Aplica o algoritmo e gera a saida em target->img...
 
-    RGB8(*ptr)
-    [target->width] = (RGB8(*)[target->width])target->img;
+    RGB8(*ptr)[target->width] = (RGB8(*)[target->width])target->img;
 
     for (int y = 0; y < target->height; y++)
     {
@@ -159,7 +183,7 @@ void seamcarve(int targetWidth)
     }
     // Chame uploadTexture a cada vez que mudar
     // a imagem (pic[2])
-    free(matrix);
+    free(matriz);
     uploadTexture();
     glutPostRedisplay();
 }
