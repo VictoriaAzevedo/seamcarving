@@ -220,7 +220,25 @@ void seamcarve(int targetWidth)
         seam[i] = posicaoPixel;
     }
 
-    
+    //Remoção do seam
+    RGB8 (*targetPtr)[width] = (RGB8(*)[width]) source->img;
+    //target->width--;
+    int pixelRemovido;
+    for (int i = 0; i < height; i++){
+        pixelRemovido = seam[i];
+        for (int j = 0; j < pixelRemovido; j++) {
+            targetPtr[i][j].r = sourcePtr[i][j].r;
+            targetPtr[i][j].b = sourcePtr[i][j].b;
+           targetPtr[i][j].g = sourcePtr[i][j].g;
+        }
+
+        for (int j = pixelRemovido + 1; j < width; j++) {
+            target->img[j - 1].r = sourcePtr[i][j].r;
+            target->img[j - 1].b = sourcePtr[i][j].b;
+            target->img[j - 1].g = sourcePtr[i][j].g;
+        }
+    }
+
 
     // Aplica o algoritmo e gera a saida em target->img...
     RGB8(*ptr)[target->width] = (RGB8(*)[target->width])target->img;
