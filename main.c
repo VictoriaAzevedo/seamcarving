@@ -19,6 +19,8 @@
 // SOIL é a biblioteca para leitura das imagens
 #include <SOIL.h>
 
+#define MIN2(x,y) ((x<y)?x:y)
+#define MIN3(x,y,z) (MIN2(MIN2(x,y),z))
 #define MAX2(x,y) ((x>y)?x:y)
 #define MAX3(x,y,z) (MAX2(MAX2(x,y),z))
 // Um pixel RGB (24 bits)
@@ -81,19 +83,12 @@ void load(char *name, Img *pic)
 // Implemente AQUI o seu algoritmo
 void seamcarve(int targetWidth)
 {
-    //RGB8 (*ptr)[source->width] = (RGB8(*)[source->width]) source->img;
-    
-    RGB8* pixelDireita;
-    RGB8* pixelEsquerda;
-
-
-    int *matriz = malloc( width * height * sizeof(int));
+    int *matrizPesos = malloc( width * height * sizeof(int));
     int rx, gx, bx;
     int ry, gy, by;
     int gradX, gradY, grad;
-
     RGB8(*sourcePtr)[source->width] = (RGB8(*)[source->width])source->img;
-    int (*matrizPesosPtr)[source->width] = (int(*)[source->width]) matriz;
+    int (*matrizPesosPtr)[source->width] = (int(*)[source->width]) matrizPesos;
 
     for (int i = 0; i < source->height; i++){
         for (int j = 0; j < source->width; j++){
@@ -169,16 +164,65 @@ void seamcarve(int targetWidth)
             }
         }
     }
-
+    
     //Identificar o melhor caminho para o seamcarving
-    for(int i = 0; i < height; i++) {
-        for(int j = 0; j < width; j++) {
-            
+    int seam[height];
+    int minSeam = matrizPesosPtr[height - 1][0];
+    int posicaoPixel = 0;
+    //Encontrar o pixel com menor acumulo na base da matriz
+    for(int j = 0; j < width - 1; j++) {
+        int segundoValor = matrizPesosPtr[height - 1][j];
+        minSeam = MIN2(minSeam, segundoValor);
+        if(minSeam == segundoValor) {
+            posicaoPixel = j;
+        }    
+    }
+    seam[height - 1] = posicaoPixel;
+    
+    //Encontrar próximos pixels
+    for (int i = height - 2; 0 <= i; i--) {
+        int j = seam[i + 1];
+        //Se pixel de baixo é no canto esquerdo
+        if(posicaoPixel == 0){
+            primeiroPixel = matrizPesosPtr[i][j];
+            segundoPixel = matrizPesosPtr[i][j+1];
+            minSeam = MIN2(primeiroPixel, segundoPixel);
+            if (minSeam == primeiroPixel){
+                posicaoPixel = j;
+            } else {
+                posicaoPixel = j + 1;
+            }
+
+        //Se pixel de baixo é no canto direito
+        } else if (posicaoPixel == width) {
+            primeiroPixel = matrizPesosPtr[i][j-1];
+            segundoPixel = matrizPesosPtr[i][j];
+            minSeam = MIN2(primeiroPixel, segundoPixel);
+            if (minSeam == primeiroPixel){
+                posicaoPixel = j;
+            } else {
+                posicaoPixel = j + 1;
+            }
+        //Se pixel de baixo é no meio
+        } else {
+            primeiroPixel = matrizPesosPtr[i][j-1];
+            segundoPixel = matrizPesosPtr[i][j];
+            terceiroPixel = matrizPesosPtr[i][j+1];
+            minSeam = MIN3(primeiroPixel ,segundoPixel, terceiroPixel);
+            if (minSeam == primeiroPixel){
+                posicaoPixel = j - 1;
+            } else if (minSeam == segundoPixel) {
+                posicaoPixel = j;
+            } else {
+                posicaoPixel = j + 1;
+            }
         }
+        seam[i] = posicaoPixel;
     }
 
-    // Aplica o algoritmo e gera a saida em target->img...
+    
 
+    // Aplica o algoritmo e gera a saida em target->img...
     RGB8(*ptr)[target->width] = (RGB8(*)[target->width])target->img;
 
     for (int y = 0; y < target->height; y++)
@@ -190,7 +234,7 @@ void seamcarve(int targetWidth)
     }
     // Chame uploadTexture a cada vez que mudar
     // a imagem (pic[2])
-    free(matriz);
+    free(matrizPesos);
     uploadTexture();
     glutPostRedisplay();
 }
