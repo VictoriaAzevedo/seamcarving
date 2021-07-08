@@ -19,6 +19,9 @@
 // SOIL é a biblioteca para leitura das imagens
 #include <SOIL.h>
 
+#include <stdbool.h>
+#include <limits.h>
+
 #define MIN2(x,y) ((x<y)?x:y)
 #define MIN3(x,y,z) (MIN2(MIN2(x,y),z))
 #define MAX2(x,y) ((x>y)?x:y)
@@ -49,13 +52,13 @@ void keyboard(unsigned char key, int x, int y);
 void arrow_keys(int a_keys, int x, int y);
 
 //Funções adicionadas
-void copiaOriginal();
+void copiaImagemOriginal();
 void calculoEnergiaPixels(int* matrizPesos);
 void aplicacaoMascara(int* matrizPesos);
+bool pixelVermelho(RGB8 pixel);
 void matrizCustoAcumulado(int* matrizPesos);
 void listaSeam(int* matrizPesos, int* seam);
 void remocaoSeam(int* seam);
-void remocaoSeam2(int* seam);
 
 // Largura e altura da janela
 int width, height;
@@ -91,7 +94,7 @@ void load(char *name, Img *pic)
     printf("Load: %d x %d x %d\n", pic->width, pic->height, chan);
 }
 
-void copiaOriginal() {
+void copiaImagemOriginal() {
     RGB8 (*sourcePtr)[source->width] = (RGB8(*)[source->width])source->img;
     RGB8 (*targetPtr)[width] = (RGB8(*)[width]) target->img;
 
@@ -100,6 +103,17 @@ void copiaOriginal() {
             targetPtr[i][j].r = sourcePtr[i][j].r;
             targetPtr[i][j].g = sourcePtr[i][j].g;
             targetPtr[i][j].b = sourcePtr[i][j].b;
+        }
+    }
+}
+
+void copiaMascara(RGB8* copia) {
+    RGB8 (*maskPtr)[source->width] = (RGB8(*)[source->width])mask->img;
+    RGB8 (*copiaPtr)[width] = (RGB8(*)[width]) copia;
+
+    for (int i = 0; i < source->height; i++) {
+        for (int j = 0; j < source->width; j++) {
+            copiaPtr[i][j] = maskPtr[i][j];
         }
     }
 }
@@ -159,8 +173,36 @@ void calculoEnergiaPixels(int* matrizPesos){
     }
 }
 
-void aplicacaoMascara(int* matrizPesos) {
+bool pixelVermelho(RGB8 pixel) {
+    int green = (int) pixel.g;
+    if(green <  200) {
+       return true;
+    }
 
+    return false;
+}
+
+bool pixelVerde(RGB8 pixel) {
+    int red = (int) pixel.r;
+    if(red <  200) {
+       return true;
+    }
+    return false;
+}
+
+void aplicacaoMascara(int* matrizPesos) {
+    RGB8 (*mascaraPtr)[mask->width] = (RGB8(*)[mask->width]) mask->img;
+    int (*matrizPesosPtr)[target->width] = (int(*)[target->width]) matrizPesos;
+    for(int i = 0; i < target->height; i++) {
+        for(int j = 0; j < target->width; j++) {
+            RGB8 pixel = mascaraPtr[i][j];
+            if(pixelVermelho(pixel)) {
+                matrizPesosPtr[i][j] = INT_MIN;
+            } else if (pixelVerde(pixel)) {
+                matrizPesosPtr[i][j] = INT_MAX;
+            }
+        }
+    }
 }
 
 void matrizCustoAcumulado(int* matrizPesos) {
@@ -169,26 +211,26 @@ void matrizCustoAcumulado(int* matrizPesos) {
     int primeiroPixel;
     int segundoPixel;
     int terceiroPixel;
-    int max;
-    for (int i = 0; i < height; i++) {
+    int min;
+    for (int i = 0; i < target->height; i++) {
         for (int j = 0; j < target->width; j++) {
             if (j == 0) { //Canto esquerdo
                 primeiroPixel = matrizPesosPtr[i][j];
                 segundoPixel = matrizPesosPtr[i][j+1];
-                max = MAX2(primeiroPixel , segundoPixel);
-                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j] + max;
+                min = MIN2(primeiroPixel , segundoPixel);
+                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j] + min;
 
             } else if (j == target->width - 1) { //Canto direito
                 primeiroPixel = matrizPesosPtr[i][j];
                 segundoPixel = matrizPesosPtr[i][j-1];
-                max = MAX2(primeiroPixel, segundoPixel);
-                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j] + max;
+                min = MIN2(primeiroPixel, segundoPixel);
+                matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j] + min;
 
             } else { //Centro da imagem
                 primeiroPixel = matrizPesosPtr[i][j-1];
                 segundoPixel = matrizPesosPtr[i][j];
                 terceiroPixel = matrizPesosPtr[i][j+1];
-                max = MAX3(primeiroPixel, segundoPixel, terceiroPixel);
+                min = MIN3(primeiroPixel, segundoPixel, terceiroPixel);
                 matrizPesosPtr[i+1][j] = matrizPesosPtr[i+1][j];
             }
         }
@@ -256,7 +298,7 @@ void listaSeam(int* matrizPesos, int* seam) {
 
 }
 
-void remocaoSeam2(int* seam) {
+void remocaoSeam(int* seam) {
     int numeroPixel;
     int numeroPixelsRemovidos = 0;
     RGB8* imagem = malloc((target->width - 1)* target->height * 3);
@@ -274,28 +316,24 @@ void remocaoSeam2(int* seam) {
 
 }
 
-
-void remocaoSeam(int* seam) {
-    //Remoção do seam
-    for(int i = 0; i < target->height; i++){
-        seam[i] = 0;
-    }
-    int width = target->width;
-
+void remocaoSeamMascara(int* seam) {
     int numeroPixel;
     int numeroPixelsRemovidos = 0;
-    for (int i = 0; i < target->height; i++){
-        for(int j = 0; j < target->width - 1; j++) {
-            if(j == seam[i]){
+    RGB8* copia = malloc((mask->width) * mask->height * 3);
+    for (int i = 0; i < mask->height; i++){
+        for(int j = 0; j < mask->width - 1; j++) {
+            if(j == seam[i]) {
                 numeroPixelsRemovidos++;
             }
-            numeroPixel = i*(target->width-1) + j;
-            target->img[numeroPixel] = source->img[numeroPixel + numeroPixelsRemovidos];
+            copia[numeroPixel] = mask->img[numeroPixel + numeroPixelsRemovidos];
         }
     }
-    target->width--;
-    realloc(pic[2].img, target->width*target->height*3);
+    mask->width = mask->width - 1;
+    free(pic[1].img);
+    pic[1].img = copia;
+
 }
+
 
 //
 // Implemente AQUI o seu algoritmo
@@ -303,20 +341,20 @@ void seamcarve(int targetWidth)
 { 
     int seam[height];
     if(target->width == source->width){
-        copiaOriginal();
+        copiaImagemOriginal();
     }
 
     while (target->width > targetW) {
-    //for (int i = 0; i < 1; i++) {
+ 
         int *matrizPesos = malloc(target->height * target->width * sizeof(int));
         calculoEnergiaPixels(matrizPesos);
         aplicacaoMascara(matrizPesos);
         matrizCustoAcumulado(matrizPesos);
         listaSeam(matrizPesos, &seam[0]);
         remocaoSeam(&seam[0]);
+        remocaoSeamMascara(&seam[0]);
         free(matrizPesos);
     }
-    //}
 
     // Aplica o algoritmo e gera a saida em target->img...
     /*RGB8(*ptr)[target->width] = (RGB8(*)[target->width])target->img;
