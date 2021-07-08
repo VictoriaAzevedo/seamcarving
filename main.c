@@ -345,7 +345,7 @@ void seamcarve(int targetWidth)
     }
 
     while (target->width > targetW) {
- 
+        
         int *matrizPesos = malloc(target->height * target->width * sizeof(int));
         calculoEnergiaPixels(matrizPesos);
         aplicacaoMascara(matrizPesos);
